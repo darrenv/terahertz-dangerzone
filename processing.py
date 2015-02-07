@@ -3,12 +3,15 @@
 Created on Mon Jan 19 14:01:23 2015
 
 @author: dreadnought
+
+"Brevity required, prurience preferred"
 """
 
 from __future__ import division
 import os, errno
 import copy
 import numpy as np
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 import cosmics_hsg as cosmics
 
@@ -247,6 +250,12 @@ class EMCCDimage(object):
                                         typestr='f',
                                         version=3
                                         )
+    def find_sidebands(self):
+        '''
+        This just implements the peak_detect function defined below.
+        '''
+        sb_loc, sb_amp = peak_detect(self.hsg_data)
+        self.sb_guess = np.array([np.asarray(sb_loc), np.asarray(sb.amp)])
         
     def stitch_spectra(self):
         '''
@@ -380,7 +389,9 @@ class EMCCDimage(object):
 #    I don't know how to do this right now...
 #    '''
 #    raise NotImplementedError
-    
+
+
+
 def gen_wavelengths(center_lambda, grating):
     '''
     This returns a 1600 element list of wavelengths for each pixel in the EMCCD based on grating and center wavelength
@@ -412,6 +423,57 @@ def gen_wavelengths(center_lambda, grating):
     output = (output + center)*10**9
     return output
 
+def peak_detect(data, window=20, cut_off=4):
+    '''
+    This function finds local maxima by comparing a point to the maximum and
+    average of the absolute value of a neighborhood the size of 2*window.  I'm 
+    sure this will take some tweaking.  
+    
+    data[0] = wavelength axis for the peaked data
+    data[1] = signal we're looking for peaks in
+    window = half the size of the neighborhood we look in.  
+    cut_off = multiplier of the average of the absolute value for peak 
+              identification.  This should probably be some noise parameter 
+              calculated from the data.
+    '''
+    x_axis = data[:,0]
+    y_axis = data[:,1]
+    
+    pre = np.empty(window)
+    post = np.empty(window)
+    
+    pre[:] = -np.Inf
+    post[:] = -np.Inf
+    y_axis_temp = np.concatenate((pre, y_axis, post))
+    
+    max_x = []
+    max_y = []
+    index = 0
+    while index < len(x_axis):
+        test_value = index + window
+        
+        check_y = y_axis_temp[test_value - window:test_value + window]
+        check_max = check_y.max()
+        check_ave = np.mean(abs(check_y[np.isfinite(check_y)])) # The inf's will dominate the mean
+        check_value = y_axis_temp[test_value]
+        
+        if check_value == check_max and check_value > cut_off * check_ave:
+            print check_ave
+            max_x.append(x_axis[index])
+            max_y.append(y_axis[index])
+            if check_value > 2 * cut_off * check_ave:
+                index += window
+            else:
+                index += 1
+        else:
+            index += 1
+        
+    return max_x, max_y
+
+
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
 if __name__ == "__main__":
     test = EMCCDimage('740test.txt')
