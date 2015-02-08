@@ -17,7 +17,7 @@ data_list = []
 for elem in file_list:
     data_list.append(proc.EMCCDimage(elem))
     
-#plt.close("all")
+plt.close()
 spectrum_list = []
 for image in data_list:
     image.clean_and_subtract()
@@ -26,7 +26,7 @@ for image in data_list:
     image.guess_sidebands(mycutoff=3)
     image.fit_sidebands()
     print image.sb_fit
-#    plt.plot(image.hsg_data[:,0], image.hsg_data[:,1])
-#    plt.plot(image.sb_guess[:,0], image.sb_guess[:,1], 'o')
+    plt.plot(image.hsg_data[:,0], image.hsg_data[:,1])
+    plt.plot(image.sb_guess[:,0], image.sb_guess[:,1], 'o')
 
-#plt.show()
+plt.show()
