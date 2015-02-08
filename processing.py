@@ -201,7 +201,7 @@ class EMCCDimage(object):
         
         returns a clean my_array
         '''
-        image_removal = cosmics.cosmicsimage(my_array, self.gain, 
+        image_removal = cosmics.cosmicsimage(my_array, 2, # I don't understand gain
                                              readnoise=myreadnoise, 
                                              sigclip=mysigclip, 
                                              sigfrac=mysigfrac, 
@@ -216,6 +216,7 @@ class EMCCDimage(object):
         if self.bg_array_clean is not None:
             print "Background already clean"
             self.clean_array = self.clean_up(self.raw_array) - self.bg_array_clean
+#            self.clean_array = self.raw_array - self.bg_array_clean
         else:
             print "I'm confused..."
             raise Exception("Where the shit is the background image?")
@@ -246,16 +247,30 @@ class EMCCDimage(object):
         self.hsg_data = np.concatenate((wavelengths, self.hsg_signal)).reshape(2,1600).T
         
         #http://docs.scipy.org/doc/numpy/reference/arrays.interface.html        
-        self.__array_interface__ = dict(shape=self.hsg_data.shape,
-                                        typestr='f',
-                                        version=3
-                                        )
-    def find_sidebands(self):
+#        self.__array_interface__ = dict(shape=self.hsg_data.shape,
+#                                        typestr='f',
+#                                        version=3
+#                                        )
+    def guess_sidebands(self, mycutoff=4):
         '''
         This just implements the peak_detect function defined below.
         '''
-        sb_loc, sb_amp = peak_detect(self.hsg_data)
-        self.sb_guess = np.array([np.asarray(sb_loc), np.asarray(sb.amp)])
+        self.sb_place, sb_loc, sb_amp = peak_detect(self.hsg_data, cut_off=mycutoff)
+        self.sb_guess = np.array([np.asarray(sb_loc), np.asarray(sb_amp)]).T
+    
+    def fit_sidebands(self):
+        '''
+        This takes self.sb_guess and fits to each maxima to get the details of
+        each sideband.
+        '''
+        self.sb_fit = []
+        
+        for index in self.sb_place:
+            data_temp = self.hsg_data[index - 25:index + 25, :]
+            p0 = [data_temp[25, 1], data_temp[25, 0], 0.1, 0.0]
+            coeff, var_list = curve_fit(gauss, data_temp[:, 1], data_temp[:, 0], p0 = p0)
+            self.sb_fit.append(coeff)
+        
         
     def stitch_spectra(self):
         '''
@@ -446,6 +461,7 @@ def peak_detect(data, window=20, cut_off=4):
     post[:] = -np.Inf
     y_axis_temp = np.concatenate((pre, y_axis, post))
     
+    max_index = []
     max_x = []
     max_y = []
     index = 0
@@ -458,7 +474,7 @@ def peak_detect(data, window=20, cut_off=4):
         check_value = y_axis_temp[test_value]
         
         if check_value == check_max and check_value > cut_off * check_ave:
-            print check_ave
+            max_index.append(index)
             max_x.append(x_axis[index])
             max_y.append(y_axis[index])
             if check_value > 2 * cut_off * check_ave:
@@ -468,12 +484,12 @@ def peak_detect(data, window=20, cut_off=4):
         else:
             index += 1
         
-    return max_x, max_y
+    return max_index, max_x, max_y
 
 
 def gauss(x, *p):
-    A, mu, sigma = p
-    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
+    A, mu, sigma, y0 = p
+    return A*np.exp(-(x-mu)**2/(2.*sigma**2)) + y0
 
 if __name__ == "__main__":
     test = EMCCDimage('740test.txt')
