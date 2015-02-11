@@ -1,0 +1,13 @@
+Metadata-Version: 1.0
+Name: processing
+Version: 1.0
+Summary: PEPS computations
+Home-page: http://github.com/braydenware/PEPS
+Author: Brayden Ware
+Author-email: brayden@physics.ucsb.edu
+License: MIT
+Description: # terahertz-dangerzone
+        
+        This thing just prints "Hello, World!"
+        
+Platform: UNKNOWN
