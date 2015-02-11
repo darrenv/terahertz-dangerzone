@@ -329,7 +329,7 @@ class EMCCDimage(object):
             save_info = list(self.info)
             info_str = ','.join(save_info)
             my_header = self.description + '\n' + parameter_str + '\n' + info_str
-            np.savetxt(filename, self.bg_array_clean, delimiter=',', header=my_header)
+            np.savetxt(filename, self.bg_array_clean, delimiter=',', header=my_header, fmt = '%d')
             
     
     def clean_and_save_keepers(self, folder_str, name_str, sweep=None, iternum=''):
