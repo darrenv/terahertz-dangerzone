@@ -255,22 +255,25 @@ class EMCCDimage(object):
         '''
         This just implements the peak_detect function defined below.
         '''
-        self.sb_place, sb_loc, sb_amp = peak_detect(self.hsg_data, cut_off=mycutoff)
+        self.sb_index, sb_loc, sb_amp = peak_detect(self.hsg_data, cut_off=mycutoff)
         self.sb_guess = np.array([np.asarray(sb_loc), np.asarray(sb_amp)]).T
     
-    def fit_sidebands(self):
+    def fit_sidebands(self, plot=False):
         '''
         This takes self.sb_guess and fits to each maxima to get the details of
         each sideband.
         '''
-        self.sb_fit = []
+        self.sb_fits = []
         
-        for index in self.sb_place:
+        for index in self.sb_index:
             data_temp = self.hsg_data[index - 25:index + 25, :]
             p0 = [data_temp[25, 1], data_temp[25, 0], 0.1, 0.0]
-            coeff, var_list = curve_fit(gauss, data_temp[:, 1], data_temp[:, 0], p0 = p0)
-            self.sb_fit.append(coeff)
+            coeff, var_list = curve_fit(gauss, data_temp[:, 0], data_temp[:, 1], p0=p0)
+            self.sb_fits.append(np.hstack((coeff, np.sqrt(np.diag(var_list)))))
+            if plot:
+                plt.plot(data_temp[:, 0], gauss(data_temp[:, 0], *coeff))
         
+        self.sb_fits = np.asarray(self.sb_fits)
         
     def stitch_spectra(self):
         '''
