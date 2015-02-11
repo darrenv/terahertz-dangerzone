@@ -1,0 +1,3 @@
+[console_scripts]
+runPEPS = PEPS.command_line:main
+

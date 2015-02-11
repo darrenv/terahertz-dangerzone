@@ -1,0 +1,6 @@
+setup.py
+emccd_processing.egg-info/PKG-INFO
+emccd_processing.egg-info/SOURCES.txt
+emccd_processing.egg-info/dependency_links.txt
+emccd_processing.egg-info/not-zip-safe
+emccd_processing.egg-info/top_level.txt
