@@ -144,13 +144,14 @@ class EMCCDimage(object):
                 ret.addenda[0] = ret.addenda[0] + other.addenda[0]
                 ret.addenda.extend(other.addenda[1:])
                 ret.subtrahenda.extend(other.subtrahenda)
+                ret.num_FEL += other.num_FEL
             else:
                 raise Exception('These are not from the same grating settings')
         return ret
     
     def __sub__(self, other):
         '''
-        This subtracts constants or other data sets between self.hsg_data.  I 
+        This subtracts constants or other data sets between sel.f.hsg_data.  I 
         think it even keeps track of what data sets are in the file and how 
         they got there
         '''
